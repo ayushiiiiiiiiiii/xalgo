@@ -1,0 +1,15 @@
+# Dependency directories
+node_modules/
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+logs
+*.log
+
+
+# Private Coding Questions & Scraper
+src/data/problems-seed.json
+src/controllers/scraperController.js
