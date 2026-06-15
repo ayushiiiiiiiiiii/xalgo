@@ -63,12 +63,10 @@ const UserSchema = new Schema(
   }
 );
 
-// Level calculated dynamically on user profile access: Math.floor(xp / 100) + 1
 UserSchema.virtual('level').get(function () {
   return Math.floor(this.xp / 100) + 1;
 });
 
-// Pre-save password cryptographic hashing hook
 UserSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
   try {
@@ -79,7 +77,6 @@ UserSchema.pre('save', async function () {
   }
 });
 
-// Instance method to check password candidate matching
 UserSchema.methods.comparePassword = async function (candidate) {
   return bcrypt.compare(candidate, this.password || '');
 };

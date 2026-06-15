@@ -8,7 +8,6 @@ export const ArenaView = () => {
   const { currentMatch, forfeitMatch } = useGame();
   const [navWarning, setNavWarning] = useState(false);
 
-  // Traps browser tabs/refresh close
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (currentMatch && currentMatch.status === 'active') {
@@ -24,11 +23,9 @@ export const ArenaView = () => {
     };
   }, [currentMatch]);
 
-  // Traps browser Back-clicks/navigation to enforce combat trap locks
   useEffect(() => {
     const handlePopState = () => {
       if (currentMatch && currentMatch.status === 'active') {
-        // Prevent back routing and push standard location state back
         window.history.pushState(null, '', window.location.pathname);
         setNavWarning(true);
       }
@@ -60,7 +57,6 @@ export const ArenaView = () => {
     );
   }
 
-  // Format countdown clock: 20:00 ticking down
   const formatTime = (sec) => {
     const m = Math.floor(sec / 60).toString().padStart(2, '0');
     const s = (sec % 60).toString().padStart(2, '0');
@@ -79,7 +75,6 @@ export const ArenaView = () => {
   return (
     <div className="min-h-screen bg-[#070A0F] text-[#F9FAFB] flex flex-col p-4 md:p-6 select-none relative font-mono">
       
-      {/* Forfeit warning dialog */}
       {navWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
           <div className="bg-[#0D111A] border border-[#EF4444]/40 rounded-2xl max-w-sm w-full p-6 shadow-[0_0_30px_rgba(239,68,68,0.25)]">
@@ -114,10 +109,8 @@ export const ArenaView = () => {
         </div>
       )}
 
-      {/* A. Global Arena Header */}
       <header className="w-full bg-[#0D111A] border border-[#1F2937] p-5 rounded-2xl mb-6 shadow-md flex items-center justify-between">
         
-        {/* Left Side Client Info */}
         <div className="flex items-center gap-3 w-1/3">
           <div className="relative">
             <div className="w-9 h-9 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center font-bold text-blue-500 font-mono text-sm">
@@ -132,7 +125,6 @@ export const ArenaView = () => {
           </div>
         </div>
 
-        {/* Centralised Countdown Timer */}
         <div className="text-center w-1/3">
           <span className="block text-[10px] text-[#6B7280] font-mono tracking-widest uppercase mb-0.5">
             COMBAT DURATION REMAINING
@@ -142,7 +134,6 @@ export const ArenaView = () => {
           </span>
         </div>
 
-        {/* Right Side Opponent Info */}
         <div className="flex items-center gap-3 w-1/3 justify-end text-right">
           <div>
             <span className="block text-sm font-bold text-[#F9FAFB] tracking-wide font-mono">
@@ -161,22 +152,18 @@ export const ArenaView = () => {
 
       </header>
 
-      {/* B. The Split Execution Workspace */}
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
-        {/* Left Side: Monaco editor core panel */}
         <section className="lg:col-span-7 h-full flex flex-col">
           <IsolatedEditor />
         </section>
 
-        {/* Right Side: problem instructions & blind opponent tracker */}
         <section className="lg:col-span-5 h-full flex flex-col">
           <BattleStatusMatrix />
         </section>
 
       </main>
 
-      {/* Forfeit option footer link */}
       <footer className="mt-4 text-center">
         <button
           type="button"
@@ -187,7 +174,6 @@ export const ArenaView = () => {
         </button>
       </footer>
 
-      {/* C. Post-Game Metrics Evaluation scorecard Modal */}
       <PostGameModal />
 
     </div>
