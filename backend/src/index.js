@@ -33,8 +33,25 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const app = express();
 const httpServer = createServer(app);
 
+let isConnected = false;
+async function ensureDB() {
+  if (isConnected && mongoose.connection.readyState === 1) return;
+  await mongoose.connect(MONGODB_URI);
+  isConnected = true;
+}
+
 app.use(cors());
 app.use(express.json());
+
+app.use(async (req, res, next) => {
+  try {
+    await ensureDB();
+    next();
+  } catch (err) {
+    console.error('❌ [DATABASE] Connection failed on request:', err.message);
+    res.status(503).json({ error: 'Database unavailable' });
+  }
+});
 
 app.use((req, res, next) => {
   console.log(`🌐 [REQUEST] ${req.method} ${req.url}`);
@@ -56,26 +73,21 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-mongoose
-  .connect(MONGODB_URI)
+ensureDB()
   .then(() => {
     console.log('⚡ [DATABASE] Secured link to MongoDB.');
     seedDefaultProblems().then(async () => {
       try {
         const { fetchLeetcodeDailyProblem } = await import('./controllers/scraperController.js');
-
         fetchLeetcodeDailyProblem();
-
-        setInterval(() => {
-          fetchLeetcodeDailyProblem();
-        }, 86400000);
+        setInterval(() => { fetchLeetcodeDailyProblem(); }, 86400000);
       } catch (err) {
-        console.log('ℹ️ [SCRAPER] Scraper system not found or failed to load. Daily POTD auto scraper disabled.');
+        console.log('ℹ️ [SCRAPER] Scraper module not found. Daily POTD auto scraper disabled.');
       }
     });
   })
   .catch((err) => {
-    console.error('❌ [DATABASE] Secure link failed:', err);
+    console.error('❌ [DATABASE] Initial connection failed:', err.message);
   });
 
 function wrapInSolutionClass(cppCode) {
@@ -1087,6 +1099,10 @@ async function terminateMatch(roomId, resolution) {
   }
 }
 
-httpServer.listen(PORT, () => {
-  console.log(`🚀 [SERVER] XAlgo Backend Engine running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  httpServer.listen(PORT, () => {
+    console.log(`🚀 [SERVER] XAlgo Backend Engine running on port ${PORT}`);
+  });
+}
+
+export default app;
