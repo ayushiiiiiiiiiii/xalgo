@@ -46,7 +46,14 @@ app.use('/api/problems', problemRoutes);
 app.use('/api/match', matchRoutes);
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'HEALTHY', timestamp: new Date() });
+  const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+  res.json({
+    status: 'HEALTHY',
+    timestamp: new Date(),
+    db: dbState[mongoose.connection.readyState] || 'unknown',
+    hasMongoUri: !!process.env.MONGODB_URI,
+    hasJwtSecret: !!process.env.JWT_SECRET
+  });
 });
 
 mongoose
