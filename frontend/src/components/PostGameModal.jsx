@@ -10,7 +10,6 @@ export const PostGameModal = () => {
 
   const isVictory = currentMatch.status === 'victory';
 
-  // Floating particles array for XP level blasts
   const particles = Array.from({ length: 24 });
 
   const xpShift = currentMatch.xpChange !== undefined 
@@ -23,7 +22,7 @@ export const PostGameModal = () => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
       
-      {/* XP Level Blast Animators */}
+      {}
       {isVictory && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {particles.map((_, i) => {
@@ -64,7 +63,7 @@ export const PostGameModal = () => {
         transition={{ type: 'spring', duration: 0.5 }}
         className="relative bg-black/90 backdrop-blur-xl border border-white/10 rounded-3xl max-w-5xl w-full p-8 shadow-[0_8px_30px_rgba(0,0,0,0.5)] overflow-hidden"
       >
-        {/* Subtle top light line to give the card a premium finish */}
+        {}
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
 
         <div className="text-center mb-8 relative z-10">
@@ -86,7 +85,7 @@ export const PostGameModal = () => {
           </p>
         </div>
 
-        {/* XP and Gold shift blocks */}
+        {}
         <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto mb-8 relative z-10">
           <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-4 text-center">
             <span className="block text-[10px] text-[#6B7280] uppercase tracking-wider">XP Gained</span>
@@ -103,10 +102,10 @@ export const PostGameModal = () => {
           </div>
         </div>
 
-        {/* Code comparison side-by-side workspace */}
+        {}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 relative z-10">
           
-          {/* User code box */}
+          {}
           <div className="flex flex-col border border-white/10 rounded-2xl overflow-hidden bg-white/[0.01]">
             <div className="px-5 py-3.5 bg-white/[0.02] border-b border-white/10 flex items-center justify-between">
               <span className="text-xs text-[#F9FAFB] tracking-wider font-bold">
@@ -122,7 +121,7 @@ export const PostGameModal = () => {
             </pre>
           </div>
 
-          {/* Opponent code box */}
+          {}
           <div className="flex flex-col border border-white/10 rounded-2xl overflow-hidden bg-white/[0.01]">
             <div className="px-5 py-3.5 bg-white/[0.02] border-b border-white/10 flex items-center justify-between">
               <span className="text-xs text-[#F9FAFB] tracking-wider font-bold">
@@ -140,7 +139,7 @@ export const PostGameModal = () => {
 
         </div>
 
-        {/* Action Button */}
+        {}
         <div className="text-center relative z-10">
           <button
             type="button"

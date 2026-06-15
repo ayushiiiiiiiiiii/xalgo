@@ -8,14 +8,13 @@ import Arena from './pages/Arena';
 import ProfileView from './views/ProfileView';
 import NavigationHeader from './components/NavigationHeader';
 
-// Active Match Route Enforcer: restricts outer routing when in battle or waiting lobby
 const CombatNavigationLock = ({ children }) => {
   const { currentMatch } = useGame();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    // If active or waiting private match, lock navigation into the arena room
+    
     if (currentMatch && (currentMatch.status === 'ACTIVE' || currentMatch.status === 'OPEN')) {
       const targetRoomPath = `/arena/${currentMatch.roomId}`;
       if (location.pathname !== targetRoomPath) {
@@ -100,7 +99,7 @@ const AppRoutes = () => {
             <Arena />
           </ProtectedLayout>
         } />
-        {/* Default routes fallback to Dashboard */}
+        {}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </CombatNavigationLock>

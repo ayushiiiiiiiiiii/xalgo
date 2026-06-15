@@ -41,17 +41,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// Mount Authentication, Problem & Match REST Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/problems', problemRoutes);
 app.use('/api/match', matchRoutes);
 
-// Express Health Endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'HEALTHY', timestamp: new Date() });
 });
 
-// MongoDB Connection & Problem Seeding & Auto Scrapers
 mongoose
   .connect(MONGODB_URI)
   .then(() => {
@@ -59,11 +56,9 @@ mongoose
     seedDefaultProblems().then(async () => {
       try {
         const { fetchLeetcodeDailyProblem } = await import('./controllers/scraperController.js');
-        
-        // Trigger dynamic daily problem import immediately upon server startup
+
         fetchLeetcodeDailyProblem();
-        
-        // Schedule execution of POTD auto scraper once every 24 hours (86,400,000 ms)
+
         setInterval(() => {
           fetchLeetcodeDailyProblem();
         }, 86400000);
@@ -97,7 +92,6 @@ ${indentedLines}
 };`;
 }
 
-// Seed default problems with empty starter function signatures for Easy, Medium, and Hard difficulties
 async function seedDefaultProblems() {
   try {
     const seedPath = path.join(__dirname, 'data', 'problems-seed.json');
@@ -106,7 +100,6 @@ async function seedDefaultProblems() {
       return;
     }
 
-    // Clear old problem sets to ensure a fresh, highly diverse seeding of all 18 problems
     await Problem.deleteMany({});
     console.log('🌱 [DATABASE] Seeding 18 highly diverse coding challenges...');
 
@@ -128,14 +121,11 @@ async function seedDefaultProblems() {
   }
 }
 
-
-// In-Memory state caches
 const onlineUsers = {};
 const quickMatchQueue = [];
 const activeMatches = {};
 const compileCooldowns = {};
 
-// Socket.io Setup
 const io = new Server(httpServer, {
   cors: {
     origin: '*',
@@ -143,7 +133,6 @@ const io = new Server(httpServer, {
   }
 });
 
-// Helper: JWT verification of socket connection
 function verifySocketToken(socket) {
   const token = socket.handshake.auth.token || socket.handshake.headers['authorization'];
   if (!token) return null;
@@ -157,7 +146,6 @@ function verifySocketToken(socket) {
   }
 }
 
-// Helper: Broadcast live ledger list to all connections
 async function broadcastLobbyList() {
   const usersArray = Object.values(onlineUsers).map((u) => ({
     socketId: u.socketId,
@@ -169,7 +157,6 @@ async function broadcastLobbyList() {
   io.emit('update_lobby_list', usersArray);
 }
 
-// Global evaluation helper for standard C++ diagnostics compiling & AST checking
 async function runEvaluation(codeText) {
   let passedCount = 0;
   let buildLogs = [];
@@ -190,7 +177,7 @@ async function runEvaluation(codeText) {
     writeFileSync(tempCppName, cppSource);
 
     try {
-      // Capture detailed compiler warnings/errors by using stdio: 'pipe'
+      
       execSync(`g++ ${tempCppName} -o ${tempExeName}`, { stdio: 'pipe', timeout: 10000 });
       buildLogs.push(`✔ [SUCCESS] Compilation completed successfully.`);
       
@@ -230,7 +217,6 @@ io.on('connection', (socket) => {
   const { userId, username } = authenticatedUser;
   console.log(`🔌 [SOCKET] Connected: ${username} (${socket.id})`);
 
-  // 1. Join Lobby Event
   socket.on('join_lobby', async () => {
     try {
       const dbUser = await User.findById(userId);
@@ -239,7 +225,6 @@ io.on('connection', (socket) => {
       dbUser.status = 'Available';
       await dbUser.save();
 
-      // Check if player has an active disconnected hold match to recover
       let recovered = false;
       for (const roomId in activeMatches) {
         const match = activeMatches[roomId];
@@ -252,13 +237,11 @@ io.on('connection', (socket) => {
           dbUser.status = 'In-Battle';
           await dbUser.save();
 
-          // Clear any active disconnect grace timers
           if (match.disconnectionTimers[userId]) {
             clearTimeout(match.disconnectionTimers[userId]);
             delete match.disconnectionTimers[userId];
           }
 
-          // Re-map socket id
           if (isPlayerA) {
             match.playerA.socketId = socket.id;
           } else {
@@ -316,7 +299,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 2. Direct Challenge Forwarder
   socket.on('send_direct_challenge', async (payload) => {
     try {
       const targetUser = onlineUsers[payload.targetUserId];
@@ -327,7 +309,6 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Synchronize the challenger's active socket ID to prevent stale entries
       callerUser.socketId = socket.id;
 
       if (targetUser.status !== 'Available') {
@@ -335,7 +316,6 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Enforce Skill Balancer bounds for direct queries
       const xpGap = Math.abs(callerUser.xp - targetUser.xp);
       if (xpGap > 500) {
         socket.emit('challenge_rejected', {
@@ -344,7 +324,6 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Forward challenge straight to target socket
       io.to(targetUser.socketId).emit('direct_challenge_received', {
         challenger: {
           userId,
@@ -357,7 +336,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 3. Challenge Acceptance Loop
   socket.on('accept_direct_challenge', async (payload) => {
     try {
       const challenger = onlineUsers[payload.challengerUserId];
@@ -368,10 +346,8 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Synchronize the acceptor's active socket ID to prevent stale entries and routing blocks
       acceptor.socketId = socket.id;
 
-      // Set DB statuses instantly to In-Battle
       await User.updateMany(
         { _id: { $in: [payload.challengerUserId, userId] } },
         { status: 'In-Battle' }
@@ -381,7 +357,6 @@ io.on('connection', (socket) => {
       acceptor.status = 'In-Battle';
       await broadcastLobbyList();
 
-      // Launch Match Session
       const roomId = `room-${uuidv4()}`;
       
       const targetChallengerSocket = io.sockets.sockets.get(challenger.socketId);
@@ -396,13 +371,11 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 4. Automated Matchmaking Queue entry
   socket.on('enter_random_queue', async () => {
     try {
       const dbUser = await User.findById(userId);
       if (!dbUser) return;
 
-      // Check if already in an active match
       let isAlreadyInBattle = false;
       for (const roomId in activeMatches) {
         const match = activeMatches[roomId];
@@ -416,7 +389,6 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Check if already in queue to prevent duplicate entries
       const alreadyQueued = quickMatchQueue.some((item) => item.userId === userId);
       if (alreadyQueued) {
         socket.emit('queue_entered', { status: 'In-Queue' });
@@ -431,7 +403,6 @@ io.on('connection', (socket) => {
       }
       await broadcastLobbyList();
 
-      // Push to FIFO matchmaking queue
       quickMatchQueue.push({
         socketId: socket.id,
         userId,
@@ -447,7 +418,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Cancel Matchmaking
   socket.on('exit_random_queue', async () => {
     try {
       const index = quickMatchQueue.findIndex((item) => item.userId === userId);
@@ -473,7 +443,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 5. Private Arena Actions
   socket.on('create_private_room', async () => {
     try {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -495,7 +464,6 @@ io.on('connection', (socket) => {
       }
       await broadcastLobbyList();
 
-      // Create a placeholder active match in the cache
       const newMatch = {
         roomId,
         problem: null,
@@ -542,12 +510,10 @@ io.on('connection', (socket) => {
       const match = activeMatches[payload.roomId];
       if (!match || match.status !== 'waiting') return;
 
-      // Only allow the host (playerA) to dissolve the room
       if (match.playerA.userId !== userId) return;
 
       console.log(`❌ [PRIVATE] Dissolving custom arena ${payload.roomId} hosted by ${username}.`);
 
-      // Reset the host status
       const dbUser = await User.findById(userId);
       if (dbUser) {
         dbUser.status = 'Available';
@@ -558,10 +524,8 @@ io.on('connection', (socket) => {
       }
       await broadcastLobbyList();
 
-      // Make host socket leave the room
       socket.leave(payload.roomId);
 
-      // Delete the placeholder match from active matches
       delete activeMatches[payload.roomId];
     } catch (err) {
       console.error(err);
@@ -584,7 +548,6 @@ io.on('connection', (socket) => {
 
       socket.join(roomId);
 
-      // Set guest's status In-Battle
       const dbUser = await User.findById(userId);
       if (dbUser) {
         dbUser.status = 'In-Battle';
@@ -602,7 +565,6 @@ io.on('connection', (socket) => {
       };
       match.playerB = playerB;
 
-      // Select problem dynamically based on average XP
       const averageXp = (playerA.xp + playerB.xp) / 2;
       let targetDifficulty = 'Medium';
       if (averageXp <= 800) {
@@ -620,7 +582,6 @@ io.on('connection', (socket) => {
       match.playerBCode = problem.boilerplateCode.get('cpp') || '';
       match.status = 'active';
 
-      // Start the countdown interval timer
       match.intervalId = setInterval(async () => {
         const currentM = activeMatches[roomId];
         if (!currentM) return;
@@ -644,7 +605,6 @@ io.on('connection', (socket) => {
         boilerplateCode: Object.fromEntries(problem.boilerplateCode || new Map())
       };
 
-      // Emit match_initialized individually to both sockets to start combat!
       const socketA = io.sockets.sockets.get(playerA.socketId);
       if (socketA) {
         socketA.emit('match_initialized', {
@@ -674,9 +634,8 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 6. Safe Blind Telemetry & Backend Compile Sync
   socket.on('run_diagnostics', async (payload) => {
-    // 2-second rate-limiting debounce cooldown to prevent CPU DoS exhaustion
+    
     const lastCompile = compileCooldowns[socket.id] || 0;
     const now = Date.now();
     if (now - lastCompile < 2000) {
@@ -695,10 +654,8 @@ io.on('connection', (socket) => {
     const isPlayerA = match.playerA.userId === userId;
     const codeText = payload.code || '';
 
-    // Run unified compilation & AST logic checker
     const evalRes = await runEvaluation(codeText);
 
-    // Save variables strictly in backend memory
     if (isPlayerA) {
       match.playerACode = codeText;
       match.playerAProgress = evalRes.passedCount;
@@ -707,14 +664,12 @@ io.on('connection', (socket) => {
       match.playerBProgress = evalRes.passedCount;
     }
 
-    // Reply directly to user with compiler execution logs
     socket.emit('diagnostics_result', {
       logs: evalRes.buildLogs,
       passed: evalRes.passedCount,
       total: 10
     });
 
-    // Pipe *only* clean numeric progress fractions via opponent_progress_update (hiding actual code)
     socket.to(payload.roomId).emit('opponent_progress_update', {
       roomId: payload.roomId,
       casesPassed: evalRes.passedCount,
@@ -723,7 +678,6 @@ io.on('connection', (socket) => {
     });
   });
 
-  // 7. Core Match Resolutions
   socket.on('submit_final_solution', async (payload) => {
     const match = activeMatches[payload.roomId];
     if (!match || match.status !== 'active') return;
@@ -731,20 +685,18 @@ io.on('connection', (socket) => {
     const codeText = payload.code || '';
     const isPlayerA = match.playerA.userId === userId;
 
-    // Run full compilation and AST logic evaluation before accepting submission
     const evalRes = await runEvaluation(codeText);
 
     if (evalRes.passedCount === 10) {
       if (isPlayerA) {
         match.playerACode = codeText;
-        match.playerAProgress = 10; // Complete
+        match.playerAProgress = 10; 
       } else {
         match.playerBCode = codeText;
         match.playerBProgress = 10;
       }
       console.log(`👑 [RESOLVE] User ${username} submitted correct solution!`);
-      
-      // Notify them of correct submission logs first
+
       socket.emit('diagnostics_result', {
         logs: [
           `✔ [SUBMISSION SUCCESS] Your code passed all test cases!`,
@@ -756,7 +708,7 @@ io.on('connection', (socket) => {
 
       await terminateMatch(payload.roomId, isPlayerA ? 'victory_a' : 'victory_b');
     } else {
-      // Submission rejected! Send failure logs back to the user without terminating match
+      
       socket.emit('diagnostics_result', {
         logs: [
           `⚠️ [SUBMISSION BLOCKED] Your code must pass 10/10 test cases before final submission is accepted!`,
@@ -778,7 +730,6 @@ io.on('connection', (socket) => {
     await terminateMatch(payload.roomId, isPlayerA ? 'victory_b' : 'victory_a');
   });
 
-  // 8. Connection Drops & 30s Grace Protection
   socket.on('disconnect', async () => {
     console.log(`🔌 [SOCKET] Disconnected: ${username} (${socket.id})`);
 
@@ -806,7 +757,6 @@ io.on('connection', (socket) => {
       }
     }
 
-    // Purge online register & mark DB status offline if not active in combat
     if (onlineUsers[userId] && onlineUsers[userId].socketId === socket.id) {
       delete onlineUsers[userId];
       
@@ -825,7 +775,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// Matchmaking Loop running every 3 seconds
 setInterval(async () => {
   if (quickMatchQueue.length < 2) return;
 
@@ -837,16 +786,14 @@ setInterval(async () => {
     for (let j = i + 1; j < quickMatchQueue.length; j++) {
       const playerB = quickMatchQueue[j];
 
-      // Skill-balancing limit gap checks with dynamic expansion based on queue wait time
       const waitTimeA = (Date.now() - playerA.joinedAt) / 1000;
       const waitTimeB = (Date.now() - playerB.joinedAt) / 1000;
       const maxWaitTime = Math.max(waitTimeA, waitTimeB);
-      
-      // Base threshold is 500 XP. Expands by 100 XP per second of wait time to ensure eventual matching.
+
       const allowedGap = 500 + maxWaitTime * 100;
       const xpGap = Math.abs(playerA.xp - playerB.xp);
       if (xpGap <= allowedGap) {
-        // Paired! Splice out
+        
         quickMatchQueue.splice(j, 1);
         quickMatchQueue.splice(i, 1);
 
@@ -860,7 +807,6 @@ setInterval(async () => {
         if (socketA) socketA.join(roomId);
         if (socketB) socketB.join(roomId);
 
-        // Update database states
         await User.updateMany(
           { _id: { $in: [playerA.userId, playerB.userId] } },
           { status: 'In-Battle' }
@@ -871,16 +817,15 @@ setInterval(async () => {
         await broadcastLobbyList();
 
         await instantiateMatch(roomId, playerA, playerB);
-        return; // Break iteration to restart indices cleanly
+        return; 
       }
     }
   }
 }, 3000);
 
-// Helper: Instantiates clean game sandbox
 async function instantiateMatch(roomId, playerA, playerB) {
   try {
-    // 1. Dynamic Skill-Balanced Match Selection Algorithm
+    
     const averageXp = (playerA.xp + playerB.xp) / 2;
     let targetDifficulty = 'Medium';
 
@@ -892,10 +837,8 @@ async function instantiateMatch(roomId, playerA, playerB) {
 
     console.log(`⚖️ [BALANCER] Competitors Average XP: ${averageXp}. Target Pool Category: ${targetDifficulty}`);
 
-    // Query problem document mapping assigned difficulty envelope
     let problemPool = await Problem.find({ difficulty: targetDifficulty });
-    
-    // Fallback if difficulty pool is empty
+
     if (problemPool.length === 0) {
       problemPool = await Problem.find();
     }
@@ -905,7 +848,6 @@ async function instantiateMatch(roomId, playerA, playerB) {
       return;
     }
 
-    // Select random problem from target pool
     const problem = problemPool[Math.floor(Math.random() * problemPool.length)];
 
     const publicProblem = {
@@ -942,7 +884,6 @@ async function instantiateMatch(roomId, playerA, playerB) {
       intervalId: null
     };
 
-    // 20:00 ticking clock
     newMatch.intervalId = setInterval(async () => {
       const match = activeMatches[roomId];
       if (!match) return;
@@ -965,7 +906,6 @@ async function instantiateMatch(roomId, playerA, playerB) {
 
     activeMatches[roomId] = newMatch;
 
-    // Emit secure initialization payloads individually to populate custom opponent names
     const socketA = io.sockets.sockets.get(playerA.socketId);
     const socketB = io.sockets.sockets.get(playerB.socketId);
 
@@ -999,7 +939,6 @@ async function instantiateMatch(roomId, playerA, playerB) {
   }
 }
 
-// Helper: Cleans up matches and writes XP/Coin updates to Mongoose DB
 async function terminateMatch(roomId, resolution) {
   const match = activeMatches[roomId];
   if (!match) return;
@@ -1048,7 +987,7 @@ async function terminateMatch(roomId, resolution) {
         userB.goldCoins += 10;
         userB.stats.duelsPlayed += 1;
       } else if (resolution === 'abrupt_a') {
-        // User B rage quit survivor wins
+        
         userA.xp += 30;
         userA.goldCoins += 15;
         userA.stats.duelsPlayed += 1;
@@ -1059,7 +998,7 @@ async function terminateMatch(roomId, resolution) {
         userB.stats.duelsPlayed += 1;
         userB.stats.currentStreak = 0;
       } else if (resolution === 'abrupt_b') {
-        // User A rage quit survivor wins
+        
         userB.xp += 30;
         userB.goldCoins += 15;
         userB.stats.duelsPlayed += 1;
@@ -1091,7 +1030,6 @@ async function terminateMatch(roomId, resolution) {
 
       await broadcastLobbyList();
 
-      // Emit synchronized game_over packet to the entire socket channel room
       if (resolution === 'victory_a' || resolution === 'victory_b') {
         const winnerId = resolution === 'victory_a' ? userAId : userBId;
         io.to(roomId).emit('game_over', { winnerId, status: "VICTORY" });
@@ -1142,7 +1080,6 @@ async function terminateMatch(roomId, resolution) {
   }
 }
 
-// Boot server
 httpServer.listen(PORT, () => {
   console.log(`🚀 [SERVER] XAlgo Backend Engine running on port ${PORT}`);
 });

@@ -13,30 +13,26 @@ export const register = async (req, res) => {
     return res.status(400).json({ error: 'All authentication fields are required.' });
   }
 
-  // Type checks to defend against NoSQL injection vectors
   if (typeof username !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
     return res.status(400).json({ error: 'System requires valid string formats for credential parameters.' });
   }
 
-  // Sanitization: Escape active HTML characters to fully block XSS injection
   const cleanUsername = username.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
   if (cleanUsername.length === 0) {
     return res.status(400).json({ error: 'Username must contain valid non-empty alphanumeric characters.' });
   }
 
-  // Formatting Validation: Strict email verification via standard regex pattern
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return res.status(400).json({ error: 'System requires a valid email coordinate format.' });
   }
 
-  // Length Validation: Minimum password depth bound check
   if (password.length < 6) {
     return res.status(400).json({ error: 'System security requires passwords to be at least 6 characters.' });
   }
 
   try {
-    // Perform database checks for collisions on uniqueness rules using sanitized username
+    
     const existingUser = await User.findOne({ $or: [{ username: cleanUsername }, { email }] });
     if (existingUser) {
       return res.status(400).json({ error: 'Credentials already registered on the grid.' });
@@ -81,13 +77,12 @@ export const login = async (req, res) => {
     return res.status(400).json({ error: 'Identifier and Password fields are required.' });
   }
 
-  // Type checks to defend against NoSQL injection vectors
   if (typeof identifier !== 'string' || typeof password !== 'string') {
     return res.status(400).json({ error: 'System requires valid string formats for login credentials.' });
   }
 
   try {
-    // Query model storage: User.findOne({ $or: [{ email: identifier }, { username: identifier }] })
+    
     const user = await User.findOne({
       $or: [{ email: identifier }, { username: identifier }]
     });
@@ -96,7 +91,6 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid access clearance.' });
     }
 
-    // Execute bcrypt.compare(password, user.password)
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid access clearance.' });

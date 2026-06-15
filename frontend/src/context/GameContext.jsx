@@ -3,7 +3,6 @@ import { useAuth } from './AuthContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-// Safely extract cpp code from a Mongoose Map (serialized as object or Map)
 function getCppCode(boilerplate) {
   if (!boilerplate) return '';
   if (typeof boilerplate.get === 'function') return boilerplate.get('cpp') || '';
@@ -14,8 +13,7 @@ const GameContext = createContext(undefined);
 
 export const GameProvider = ({ children }) => {
   const { user, token, isAuthenticated, logoutAction } = useAuth();
-  
-  // Game states
+
   const [currentMatch, setCurrentMatch] = useState(null);
   const [hostRoomCode, setHostRoomCode] = useState(null);
   const [errorNotification, setErrorNotification] = useState(null);
@@ -23,7 +21,6 @@ export const GameProvider = ({ children }) => {
   const [matchOutcome, setMatchOutcome] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
 
-  // Dummies for compile-time safety
   const socket = null;
   const lobbyUsers = [];
   const isQueueing = false;
@@ -33,7 +30,6 @@ export const GameProvider = ({ children }) => {
   const matchTimerRef = useRef(null);
   const pollingIntervalRef = useRef(null);
 
-  // Fetch real MERN leaderboard dynamically from database
   useEffect(() => {
     let interval = null;
     if (isAuthenticated && token) {
@@ -64,7 +60,6 @@ export const GameProvider = ({ children }) => {
     };
   }, [isAuthenticated, token]);
 
-  // Stateless telemetry polling loop ticking every 4 seconds
   useEffect(() => {
     if (currentMatch && (currentMatch.status === 'OPEN' || currentMatch.status === 'ACTIVE')) {
       if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
@@ -92,25 +87,21 @@ export const GameProvider = ({ children }) => {
 
               const newLogs = [...prev.logs];
 
-              // Detect when player joins and status transitions to ACTIVE
               if (prev.status === 'OPEN' && m.status === 'ACTIVE') {
                 newLogs.push('[GAME] Player connected to Battle Arena.');
               }
 
-              // Detect when opponent updates progress
               const newOpponentProgress = opponent ? opponent.progress : 0;
               if (opponent && prev.opponentProgress !== newOpponentProgress) {
                 newLogs.push(`[GAME] Opponent progress: ${newOpponentProgress}/10 completed.`);
               }
 
-              // Detect match resolution
               if (m.status === 'RESOLVED') {
                 newLogs.push(`🏁 [GAME] Game finished! Result: ${m.winnerId ? (m.winnerId._id === user?.id || m.winnerId === user?.id ? 'Victory!' : 'Defeat!') : 'Draw!'}`);
 
                 if (m.winnerId) {
                   const isIWin = m.winnerId._id === user?.id || m.winnerId === user?.id;
-                  
-                  // Check if this was a forfeit or a victory by submission
+
                   const meForfeited = me && me.durationTaken === null && (!me.codeSubmitted || me.codeSubmitted === '');
                   if (meForfeited) {
                     setMatchOutcome("FORFEIT_BY_ME");
@@ -120,7 +111,7 @@ export const GameProvider = ({ children }) => {
                     setMatchOutcome(isIWin ? "VICTORY" : "DEFEAT");
                   }
                 } else {
-                  // Fallback: draw or defeat
+                  
                   setMatchOutcome("DEFEAT");
                 }
                 setShowSummaryModal(true);
@@ -166,7 +157,6 @@ export const GameProvider = ({ children }) => {
     };
   }, [currentMatch?.roomId, currentMatch?.status, token, user?.id]);
 
-  // Match Local Timer countdown fallback
   useEffect(() => {
     if (currentMatch && currentMatch.status === 'ACTIVE') {
       matchTimerRef.current = setInterval(() => {
@@ -193,7 +183,6 @@ export const GameProvider = ({ children }) => {
   const acceptChallenge = () => {};
   const declineChallenge = () => {};
 
-  // Host Duel Trigger (POST /match/create)
   const generateHostCode = async (difficulty) => {
     try {
       const res = await fetch(`${API_URL}/match/create`, {
@@ -222,7 +211,7 @@ export const GameProvider = ({ children }) => {
             starterCode: getCppCode(fullMatch.problemId.boilerplateCode),
             boilerplateCode: fullMatch.problemId.boilerplateCode || {}
           },
-          timeRemaining: 1800, // 30 mins
+          timeRemaining: 1800, 
           myProgress: 0,
           opponentProgress: 0,
           myCode: getCppCode(fullMatch.problemId.boilerplateCode),
@@ -239,7 +228,6 @@ export const GameProvider = ({ children }) => {
           hasSubmitted: false
         });
 
-        // Copy code to clipboard
         navigator.clipboard.writeText(data.roomCode).catch((err) => {
           console.error('Failed to copy room code:', err);
         });
@@ -256,7 +244,6 @@ export const GameProvider = ({ children }) => {
     return null;
   };
 
-  // Join Duel Trigger (PUT /match/join/:roomCode)
   const verifyAndJoinRoom = async (code) => {
     try {
       const res = await fetch(`${API_URL}/match/join/${code}`, {
@@ -283,7 +270,7 @@ export const GameProvider = ({ children }) => {
             starterCode: getCppCode(m.problemId.boilerplateCode),
             boilerplateCode: m.problemId.boilerplateCode || {}
           },
-          timeRemaining: m.timeRemaining !== undefined ? m.timeRemaining : 1800, // 30 mins
+          timeRemaining: m.timeRemaining !== undefined ? m.timeRemaining : 1800, 
           myProgress: 0,
           opponentProgress: 0,
           myCode: getCppCode(m.problemId.boilerplateCode),
@@ -318,11 +305,9 @@ export const GameProvider = ({ children }) => {
     });
   };
 
-  // Intelligent regex-based local code validation heuristics
   const validateCode = (problemTitle, code, starterCode) => {
     const normalized = code.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ');
 
-    // A. Check basic starter skeletal identity
     const sanitizedUserCode = code.replace(/\s+/g, '');
     const sanitizedStarter = starterCode.replace(/\s+/g, '');
     if (!code || code.trim() === '' || sanitizedUserCode === sanitizedStarter) {
@@ -332,7 +317,6 @@ export const GameProvider = ({ children }) => {
       };
     }
 
-    // B. Check basic C++ syntax sanity (unpaired braces)
     const openBraces = (code.match(/\{/g) || []).length;
     const closeBraces = (code.match(/\}/g) || []).length;
     if (openBraces !== closeBraces) {
@@ -342,7 +326,6 @@ export const GameProvider = ({ children }) => {
       };
     }
 
-    // C. Problem-specific intelligent validation heuristics
     if (problemTitle.includes('Reverse String')) {
       const hasSignature = code.includes('reverseString') && code.includes('vector<char>');
       if (!hasSignature) {
@@ -480,7 +463,6 @@ export const GameProvider = ({ children }) => {
     return { success: true };
   };
 
-  // Compile with Judge0 API and Sync progress
   const runDiagnostics = async (code, language = 'cpp') => {
     if (!currentMatch) return;
 
@@ -496,15 +478,14 @@ export const GameProvider = ({ children }) => {
     });
 
     try {
-      // POST directly to free public Judge0 API compiler
-      // language_id 54 matches C++ (GCC 9.2.0)
+
       const res = await fetch('https://extra.judge0.com/submissions?base64_encoded=false&wait=true', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          source_code: code + '\n\nint main() { return 0; }', // append dummy main to compilation
+          source_code: code + '\n\nint main() { return 0; }', 
           language_id: 54,
           stdin: ''
         })
@@ -536,7 +517,6 @@ export const GameProvider = ({ children }) => {
         compileLogs.push('[GAME] 0/10 test cases passed.');
       }
 
-      // Update locally
       setCurrentMatch((prev) => {
         if (!prev) return null;
         return {
@@ -546,7 +526,6 @@ export const GameProvider = ({ children }) => {
         };
       });
 
-      // Synchronize progress to transactional MERN Match store
       await fetch(`${API_URL}/match/progress`, {
         method: 'PATCH',
         headers: {
@@ -568,10 +547,8 @@ export const GameProvider = ({ children }) => {
       compileLogs.push(`⚠️ [SYSTEM] External compilation server offline (extra.judge0.com).`);
       compileLogs.push(`🔄 [SYSTEM] Activating Local Cybernetic Sandbox Emulator...`);
 
-      // Retrieve default boilerplate code for the current problem
       const starterCode = currentMatch.problem?.starterCode || '';
-      
-      // Execute our intelligent regex validation suite!
+
       const validation = validateCode(currentMatch.problem?.title || '', code, starterCode);
 
       if (!validation.success) {
@@ -586,7 +563,6 @@ export const GameProvider = ({ children }) => {
         compileLogs.push(`[GAME] 10/10 test cases passed!`);
       }
 
-      // Update local state with emulation logs and progress E2E
       setCurrentMatch((prev) => {
         if (!prev) return null;
         return {
@@ -596,7 +572,6 @@ export const GameProvider = ({ children }) => {
         };
       });
 
-      // Synchronize progress to transactional MERN Match store
       try {
         await fetch(`${API_URL}/match/progress`, {
           method: 'PATCH',
@@ -615,7 +590,6 @@ export const GameProvider = ({ children }) => {
     }
   };
 
-  // Submit Final Solution (POST /match/submit)
   const submitSolution = async () => {
     if (!currentMatch) return;
     try {
@@ -652,7 +626,6 @@ export const GameProvider = ({ children }) => {
     }
   };
 
-  // Forfeit Match (POST /match/forfeit)
   const forfeitMatch = async () => {
     if (!currentMatch) return;
     try {

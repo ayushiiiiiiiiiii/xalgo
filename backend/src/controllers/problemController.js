@@ -1,7 +1,5 @@
 import { Problem } from '../models/Problem.js';
 
-
-// Retrieve all archived problems from grid MongoDB storage
 export const getAllProblems = async (req, res) => {
   try {
     const problems = await Problem.find({}, '_id title difficulty description');
@@ -12,7 +10,6 @@ export const getAllProblems = async (req, res) => {
   }
 };
 
-// Dynamically resolve and return today's Problem of the Day (POTD)
 export const getProblemOfTheDay = async (req, res) => {
   try {
     const problems = await Problem.find({});
@@ -20,7 +17,6 @@ export const getProblemOfTheDay = async (req, res) => {
       return res.status(404).json({ error: 'No challenges registered in the database grid.' });
     }
 
-    // Determine today's deterministic index based on calendar day (Day of Year)
     const today = new Date();
     const startOfYear = new Date(today.getFullYear(), 0, 0);
     const diff = (today.getTime() - startOfYear.getTime()) + ((startOfYear.getTimezoneOffset() - today.getTimezoneOffset()) * 60 * 1000);

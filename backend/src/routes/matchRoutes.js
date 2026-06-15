@@ -11,7 +11,6 @@ import {
 
 const router = express.Router();
 
-// Apply JWT authentication to all match endpoints
 router.post('/create', authenticateJWT, createMatch);
 router.put('/join/:roomCode', authenticateJWT, joinMatch);
 router.get('/status/:roomCode', authenticateJWT, getMatchStatus);

@@ -2,7 +2,6 @@ import { Match } from '../models/Match.js';
 import { Problem } from '../models/Problem.js';
 import { User } from '../models/User.js';
 
-// Create a new match room (Host trigger)
 export const createMatch = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -13,7 +12,6 @@ export const createMatch = async (req, res) => {
       query.difficulty = difficulty;
     }
 
-    // Select a random problem from the seeded database matching the query
     const problemCount = await Problem.countDocuments(query);
     if (problemCount === 0) {
       return res.status(504).json({ error: `No problems found matching difficulty: ${difficulty}` });
@@ -26,7 +24,6 @@ export const createMatch = async (req, res) => {
       return res.status(500).json({ error: 'Failed to retrieve a challenge problem matching selection.' });
     }
 
-    // Generate a unique 6-character room code starting with XA
     let roomCode = '';
     let isUnique = false;
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -41,7 +38,6 @@ export const createMatch = async (req, res) => {
       }
     }
 
-    // Create the OPEN match document
     const match = new Match({
       roomCode,
       problemId: problem._id,
@@ -73,7 +69,6 @@ export const createMatch = async (req, res) => {
   }
 };
 
-// Join an open match room (Guest trigger)
 export const joinMatch = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -83,7 +78,6 @@ export const joinMatch = async (req, res) => {
       return res.status(400).json({ error: 'Valid 6-digit Room Code is required.' });
     }
 
-    // Find the match to check pre-conditions and return informative error messages
     const matchExists = await Match.findOne({ roomCode });
     if (!matchExists) {
       return res.status(404).json({ error: 'Room code not found.' });
@@ -97,7 +91,6 @@ export const joinMatch = async (req, res) => {
       return res.status(400).json({ error: 'You cannot join your own hosted duel.' });
     }
 
-    // Atomically join the match room to prevent concurrent join race conditions
     const match = await Match.findOneAndUpdate(
       {
         roomCode,
@@ -136,7 +129,6 @@ export const joinMatch = async (req, res) => {
   }
 };
 
-// Get match status and telemetry progress (Short-polling endpoint)
 export const getMatchStatus = async (req, res) => {
   try {
     const { roomCode } = req.params;
@@ -155,14 +147,14 @@ export const getMatchStatus = async (req, res) => {
       return res.status(404).json({ error: 'Active match room not found.' });
     }
 
-    let timeRemaining = 1800; // 30 minutes match duration limit
+    let timeRemaining = 1800; 
 
     if (match.status === 'ACTIVE' && match.startedAt) {
       const elapsedSeconds = Math.floor((Date.now() - match.startedAt.getTime()) / 1000);
       timeRemaining = Math.max(0, 1800 - elapsedSeconds);
 
       if (timeRemaining === 0) {
-        // Atomic dynamic resolution on timeout
+        
         match.status = 'RESOLVED';
 
         const hostSubmitted = match.host.durationTaken !== null;
@@ -192,7 +184,7 @@ export const getMatchStatus = async (req, res) => {
             userHost.xp = Math.max(0, userHost.xp - 15);
             userHost.stats.currentStreak = 0;
           } else {
-            // Draw: neither submitted
+            
             userHost.xp += 10;
             userGuest.xp += 10;
           }
@@ -203,7 +195,6 @@ export const getMatchStatus = async (req, res) => {
 
         await match.save();
 
-        // Re-fetch populated match to return correct resolved state
         match = await Match.findOne({ roomCode })
           .populate('problemId')
           .populate('host.userId', 'username xp stats')
@@ -214,7 +205,6 @@ export const getMatchStatus = async (req, res) => {
       timeRemaining = 0;
     }
 
-    // Return the match document converted to an object with timeRemaining injected
     const matchObj = match.toObject();
     matchObj.timeRemaining = timeRemaining;
 
@@ -227,7 +217,6 @@ export const getMatchStatus = async (req, res) => {
   }
 };
 
-// Update coding diagnostics progress fraction
 export const updateProgress = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -262,7 +251,6 @@ export const updateProgress = async (req, res) => {
   }
 };
 
-// Submit code solution & calculate victory/defeat
 export const submitMatch = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -298,15 +286,12 @@ export const submitMatch = async (req, res) => {
       match.guest.durationTaken = durationTaken;
     }
 
-    // Check if BOTH players have submitted or time expired
-    // The match transitions to RESOLVED if both durationTaken are set (meaning both finished/submitted)
     const hostSubmitted = match.host.durationTaken !== null;
     const guestSubmitted = match.guest && match.guest.durationTaken !== null;
 
     if (hostSubmitted && guestSubmitted) {
       match.status = 'RESOLVED';
 
-      // Evaluate winner based on lowest durationTaken
       const hostTime = match.host.durationTaken;
       const guestTime = match.guest.durationTaken;
 
@@ -334,7 +319,7 @@ export const submitMatch = async (req, res) => {
           userHost.xp = Math.max(0, userHost.xp - 15);
           userHost.stats.currentStreak = 0;
         } else {
-          // Draw case: both get +10 XP
+          
           userHost.xp += 10;
           userGuest.xp += 10;
         }
@@ -356,7 +341,6 @@ export const submitMatch = async (req, res) => {
   }
 };
 
-// Immediate Forfeit Match trigger
 export const forfeitMatch = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -388,7 +372,7 @@ export const forfeitMatch = async (req, res) => {
     const userGuest = match.guest ? await User.findById(match.guest.userId) : null;
 
     if (isHost) {
-      // Host forfeited: guest is winner
+      
       if (userGuest) {
         match.winnerId = userGuest._id;
         userGuest.xp += 30;
@@ -398,13 +382,13 @@ export const forfeitMatch = async (req, res) => {
         await userGuest.save();
       }
       if (userHost) {
-        userHost.xp = Math.max(0, userHost.xp - 50); // -50 XP penalty for forfeit
+        userHost.xp = Math.max(0, userHost.xp - 50); 
         userHost.stats.currentStreak = 0;
         userHost.stats.duelsPlayed += 1;
         await userHost.save();
       }
     } else if (isGuest) {
-      // Guest forfeited: host is winner
+      
       if (userHost) {
         match.winnerId = userHost._id;
         userHost.xp += 30;
@@ -414,7 +398,7 @@ export const forfeitMatch = async (req, res) => {
         await userHost.save();
       }
       if (userGuest) {
-        userGuest.xp = Math.max(0, userGuest.xp - 50); // -50 XP penalty for forfeit
+        userGuest.xp = Math.max(0, userGuest.xp - 50); 
         userGuest.stats.currentStreak = 0;
         userGuest.stats.duelsPlayed += 1;
         await userGuest.save();

@@ -10,7 +10,6 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Persistent Hydration Check
   useEffect(() => {
     const storedToken = localStorage.getItem('xalgo_token');
     const storedUser = localStorage.getItem('xalgo_user');
@@ -31,8 +30,7 @@ export const AuthProvider = ({ children }) => {
 
   const loginAction = async (credentials, isRegister = false) => {
     const endpoint = isRegister ? `${API_URL}/auth/register` : `${API_URL}/auth/login`;
-    
-    // Format body fields for login/register
+
     const body = isRegister 
       ? { username: credentials.username, email: credentials.email, password: credentials.password }
       : { identifier: credentials.identifier || credentials.username, password: credentials.password };
@@ -52,7 +50,6 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.error || 'Authentication clearance refused.');
       }
 
-      // Save credentials in browser storage
       localStorage.setItem('xalgo_token', data.token);
       localStorage.setItem('xalgo_user', JSON.stringify(data.user));
 
@@ -68,7 +65,7 @@ export const AuthProvider = ({ children }) => {
 
   const logoutAction = async () => {
     try {
-      // Clean localized storage keys
+      
       localStorage.removeItem('xalgo_token');
       localStorage.removeItem('xalgo_user');
 

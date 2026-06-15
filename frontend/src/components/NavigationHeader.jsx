@@ -45,7 +45,7 @@ export const NavigationHeader = () => {
       </div>
 
       <div className="relative" ref={dropdownRef}>
-        {/* Clickable user profile avatar container */}
+        {}
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center justify-center w-10 h-10 rounded-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:outline-none transition-all duration-300 relative group cursor-pointer"
@@ -57,13 +57,13 @@ export const NavigationHeader = () => {
           </span>
         </button>
 
-        {/* Dropdown Menu (Shadcn style premium obsidian dropdown wrapper) */}
+        {}
         {isOpen && (
           <div
             className="absolute right-0 mt-2.5 w-60 rounded-xl bg-black/85 backdrop-blur-xl border border-white/10 p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.6)] z-50 flex flex-col gap-0.5"
             role="menu"
           >
-            {/* Header info */}
+            {}
             <div className="px-3 py-2 border-b border-white/10 mb-1">
               <span className="block text-xs font-bold text-[#F9FAFB] truncate">{user.username}</span>
               <span className="block text-[10px] text-[#6B7280] truncate mt-0.5">{user.email}</span>

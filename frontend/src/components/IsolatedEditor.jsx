@@ -7,11 +7,8 @@ export const IsolatedEditor = () => {
   const [editorLanguage] = useState('cpp');
   const editorRef = useRef(null);
 
-  // Track initial code to use as defaultValue (only set ONCE on mount)
   const initialCodeRef = useRef(currentMatch?.myCode || '');
 
-  // When readOnly changes (e.g. after submission), update editor options directly
-  // without touching the editor's content/value
   const isReadOnly = showSummaryModal || !!currentMatch?.hasSubmitted;
   const canSubmit = currentMatch?.myProgress === 10 && !currentMatch?.hasSubmitted && !showSummaryModal;
   
@@ -21,8 +18,6 @@ export const IsolatedEditor = () => {
     }
   }, [isReadOnly]);
 
-  // Imperative safeguard: if editor starts empty but myCode becomes populated, seed it.
-  // This is safe because it only runs if the editor is completely empty.
   useEffect(() => {
     if (editorRef.current && currentMatch?.myCode) {
       const currentVal = editorRef.current.getValue();
@@ -43,7 +38,6 @@ export const IsolatedEditor = () => {
   const handleEditorDidMount = (editor, monaco) => {
     editorRef.current = editor;
 
-    // Define custom dark gaming theme
     monaco.editor.defineTheme('cyber-obsidian', {
       base: 'vs-dark',
       inherit: true,
@@ -67,10 +61,8 @@ export const IsolatedEditor = () => {
     });
     monaco.editor.setTheme('cyber-obsidian');
 
-    // Set initial readOnly state
     editor.updateOptions({ readOnly: isReadOnly });
 
-    // Register Ctrl+Enter shortcut to run diagnostics
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
       const code = editor.getValue();
       runDiagnostics(code, 'cpp');
@@ -83,7 +75,7 @@ export const IsolatedEditor = () => {
   };
 
   const handleSubmit = () => {
-    // Sync latest editor content to state before submitting
+    
     if (editorRef.current) {
       updateMyCode(editorRef.current.getValue());
     }
@@ -92,10 +84,10 @@ export const IsolatedEditor = () => {
 
   return (
     <div className="relative flex flex-col h-full bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
-      {/* Subtle top light line to give the card a premium finish */}
+      {}
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/35 to-transparent z-10" />
       
-      {/* Editor top control header bar */}
+      {}
       <div className="flex items-center justify-between px-6 py-4 bg-white/[0.02] border-b border-white/10">
         <div className="flex items-center gap-3">
           <div className="flex gap-1.5">
@@ -120,7 +112,7 @@ export const IsolatedEditor = () => {
         </div>
       </div>
 
-      {/* Editor workspace pane — uses defaultValue to prevent re-renders from wiping code */}
+      {}
       <div className="flex-1 min-h-[350px] relative">
         <Editor
           height="100%"
@@ -152,10 +144,10 @@ export const IsolatedEditor = () => {
         />
       </div>
 
-      {/* Bottom Diagnostics / Compilation terminal pane */}
+      {}
       <div className="border-t border-white/10 bg-white/[0.01] flex flex-col h-60">
         
-        {/* Terminal Header */}
+        {}
         <div className="flex items-center justify-between px-6 py-2.5 bg-white/[0.02] border-b border-white/10">
           <span className="text-xs text-[#6B7280] tracking-wider font-bold">
             Test Case Results
@@ -165,7 +157,7 @@ export const IsolatedEditor = () => {
           </span>
         </div>
 
-        {/* System logs view */}
+        {}
         <div className="flex-1 p-4 overflow-y-auto font-mono text-xs text-[#6B7280] space-y-1.5 scrollbar-thin scrollbar-[#223147]/30 select-text">
           {currentMatch.logs?.map((log, index) => {
             let textColor = 'text-[#6B7280]';
@@ -183,7 +175,7 @@ export const IsolatedEditor = () => {
           })}
         </div>
 
-        {/* Console action buttons */}
+        {}
         <div className="p-4 bg-white/[0.02] border-t border-white/10 flex items-center justify-between gap-4">
           <button
             onClick={handleRunDiagnostics}

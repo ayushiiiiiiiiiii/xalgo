@@ -8,7 +8,6 @@ export const BattleStatusMatrix = () => {
 
   const { problem } = currentMatch;
 
-  // Simple, elegant parser to render markdown into nice premium HTML elements
   const renderMarkdown = (text) => {
     return text.split('\n').map((line, idx) => {
       if (line.startsWith('### ')) {
@@ -24,9 +23,9 @@ export const BattleStatusMatrix = () => {
         return <code key={idx} className="bg-white/[0.05] border border-white/10 text-emerald-400 rounded px-1.5 py-0.5 text-xs font-mono">{line.replace(/`/g, '')}</code>;
       }
       if (line.startsWith('```')) {
-        return null; // Handle code blocks cleanly or filter out block tokens
+        return null; 
       }
-      // If inside code block (we detect if it has indentation or structure)
+      
       if (line.includes('Input:') || line.includes('Output:') || line.includes('Explanation:')) {
         return (
           <pre key={idx} className="bg-white/[0.01] border border-white/10 rounded-xl p-3.5 text-xs text-blue-400 font-mono my-2 overflow-x-auto select-text leading-relaxed">
@@ -43,9 +42,9 @@ export const BattleStatusMatrix = () => {
 
   return (
     <div className="flex flex-col h-full gap-6">
-      {/* Problem Description Matrix */}
+      {}
       <div className="relative flex-1 bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-2xl p-6 overflow-y-auto max-h-[600px] shadow-[0_8px_30px_rgba(0,0,0,0.5)] select-text">
-        {/* Subtle top light line to give the card a premium finish */}
+        {}
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/35 to-transparent" />
         <div className="flex justify-between items-center pb-4 mb-4 border-b border-white/10">
           <h2 className="text-[#F9FAFB] font-bold text-xl tracking-wide font-sans uppercase">
