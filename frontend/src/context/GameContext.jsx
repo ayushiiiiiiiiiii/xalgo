@@ -21,7 +21,7 @@ export const GameProvider = ({ children }) => {
   const [matchOutcome, setMatchOutcome] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
 
-  const socket = null;
+
   const lobbyUsers = [];
   const isQueueing = false;
   const queueTime = 0;
@@ -668,7 +668,7 @@ export const GameProvider = ({ children }) => {
   return (
     <GameContext.Provider
       value={{
-        socket,
+
         lobbyUsers,
         isQueueing,
         queueTime,
