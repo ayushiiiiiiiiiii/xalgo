@@ -305,164 +305,6 @@ export const GameProvider = ({ children }) => {
     });
   };
 
-  const validateCode = (problemTitle, code, starterCode) => {
-    const normalized = code.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ');
-
-    const sanitizedUserCode = code.replace(/\s+/g, '');
-    const sanitizedStarter = starterCode.replace(/\s+/g, '');
-    if (!code || code.trim() === '' || sanitizedUserCode === sanitizedStarter) {
-      return {
-        success: false,
-        error: `❌ [ERROR] Code matches default starter skeleton or is empty.\n❌ [ERROR] Please implement the solution body before running diagnostics.`
-      };
-    }
-
-    const openBraces = (code.match(/\{/g) || []).length;
-    const closeBraces = (code.match(/\}/g) || []).length;
-    if (openBraces !== closeBraces) {
-      return {
-        success: false,
-        error: `❌ [ERROR] Syntax Error: Unpaired braces present. '{' count: ${openBraces}, '}' count: ${closeBraces}.`
-      };
-    }
-
-    if (problemTitle.includes('Reverse String')) {
-      const hasSignature = code.includes('reverseString') && code.includes('vector<char>');
-      if (!hasSignature) {
-        return { success: false, error: "❌ [ERROR] Linker Error: Could not find matching C++ function signature:\n'vector<char> reverseString(vector<char>& s)'" };
-      }
-      const hasReverse = normalized.includes('reverse(') || normalized.includes('swap(') || (normalized.includes('[i]') && (normalized.includes('[n-1-i]') || normalized.includes('[s.size()-1-i]')));
-      if (!hasReverse) {
-        return {
-          success: false,
-          error: "❌ [ERROR] Test Case 1/10 Failed:\nInput: s = [\"h\",\"e\",\"l\",\"l\",\"o\"]\nExpected: [\"o\",\"l\",\"l\",\"e\",\"h\"]\nActual: [\"h\",\"e\",\"l\",\"l\",\"o\"]\n\nReason: String reversal swap logic is missing or incomplete."
-        };
-      }
-    }
-    else if (problemTitle.includes('Subarray Sum')) {
-      const hasSignature = code.includes('subarraySum') && code.includes('vector<int>');
-      if (!hasSignature) {
-        return { success: false, error: "❌ [ERROR] Linker Error: Could not find matching C++ function signature:\n'vector<int> subarraySum(vector<int>& arr, int sum)'" };
-      }
-      const hasLoop = normalized.includes('for') || normalized.includes('while');
-      const hasSumLogic = normalized.includes('sum') && (normalized.includes('==') || normalized.includes('+=') || normalized.includes('-='));
-      if (!hasLoop || !hasSumLogic) {
-        return {
-          success: false,
-          error: "❌ [ERROR] Test Case 1/10 Failed:\nInput: arr = [1,2,3,7,5], sum = 12\nExpected: [2,4]\nActual: [-1]\n\nReason: Subarray continuous sum accumulator or pointer slider logic not implemented."
-        };
-      }
-    }
-    else if (problemTitle.includes('Odd-Even')) {
-      const hasSignature = code.includes('checkProductOddEven');
-      if (!hasSignature) {
-        return { success: false, error: "❌ [ERROR] Linker Error: Could not find matching C++ function signature:\n'string checkProductOddEven(int a, int b)'" };
-      }
-      const hasModulo = normalized.includes('% 2') || normalized.includes('& 1') || normalized.includes('%2');
-      const hasOddEvenStrings = normalized.includes('"Odd"') && normalized.includes('"Even"');
-      if (!hasModulo || !hasOddEvenStrings) {
-        return {
-          success: false,
-          error: "❌ [ERROR] Test Case 1/10 Failed:\nInput: a = 3, b = 4\nExpected: \"Even\"\nActual: \"\"\n\nReason: Product modulo parity validation check is incomplete or return values are missing."
-        };
-      }
-    }
-    else if (problemTitle.includes('Rotated Array')) {
-      const hasSignature = code.includes('findElement');
-      if (!hasSignature) {
-        return { success: false, error: "❌ [ERROR] Linker Error: Could not find matching C++ function signature:\n'int findElement(vector<int>& arr, int k)'" };
-      }
-      const hasSearch = normalized.includes('for') || normalized.includes('while') || normalized.includes('find(') || normalized.includes('binary_search');
-      if (!hasSearch) {
-        return {
-          success: false,
-          error: "❌ [ERROR] Test Case 1/10 Failed:\nInput: arr = [5,6,7,8,1,2,3], k = 8\nExpected: 3\nActual: -1\n\nReason: Element search traversal index bounds or binary split checks missing."
-        };
-      }
-    }
-    else if (problemTitle.includes('Placing Marbles')) {
-      const hasMarbles = normalized.includes('1') && (normalized.includes('==') || normalized.includes('count') || normalized.includes('for'));
-      if (!hasMarbles) {
-        return {
-          success: false,
-          error: "❌ [ERROR] Test Case 1/10 Failed:\nInput: s = \"101\"\nExpected: 2\nActual: 0\n\nReason: Slot count index parser did not register active marbles."
-        };
-      }
-    }
-    else if (problemTitle.includes('Round Up')) {
-      const hasRounding = normalized.includes('+ 1') || normalized.includes('+1') || normalized.includes('ceil') || normalized.includes('2.0') || normalized.includes('2');
-      if (!hasRounding) {
-        return {
-          success: false,
-          error: "❌ [ERROR] Test Case 1/10 Failed:\nInput: a = 3, b = 4\nExpected: 4\nActual: 3\n\nReason: Rounding bias quotient mean calculation failed bounds checks."
-        };
-      }
-    }
-    else if (problemTitle.includes('Two Sum')) {
-      const hasSignature = code.includes('twoSum') && code.includes('vector<int>');
-      if (!hasSignature) {
-        return { success: false, error: "❌ [ERROR] Linker Error: Could not find matching C++ function signature:\n'vector<int> twoSum(vector<int>& nums, int target)'" };
-      }
-      const hasTwoLoops = normalized.includes('for') && (normalized.includes('map') || normalized.includes('unordered_map') || (normalized.match(/for/g) || []).length >= 2);
-      if (!hasTwoLoops) {
-        return {
-          success: false,
-          error: "❌ [ERROR] Test Case 1/10 Failed:\nInput: nums = [2,7,11,15], target = 9\nExpected: [0,1]\nActual: []\n\nReason: Target lookup mapping array loops not initialized."
-        };
-      }
-    }
-    else if (problemTitle.includes('Maximum Subarray')) {
-      const hasSignature = code.includes('maxSubarraySum');
-      if (!hasSignature) {
-        return { success: false, error: "❌ [ERROR] Linker Error: Could not find matching C++ function signature:\n'int maxSubarraySum(vector<int>& arr)'" };
-      }
-      const hasKadane = normalized.includes('max') && (normalized.includes('sum') || normalized.includes('current') || normalized.includes('ending'));
-      if (!hasKadane) {
-        return {
-          success: false,
-          error: "❌ [ERROR] Test Case 1/10 Failed:\nInput: arr = [-2,1,-3,4,-1,2,1,-5,4]\nExpected: 6\nActual: 0\n\nReason: Kadane's maximum dynamic accumulator logic variables missing."
-        };
-      }
-    }
-    else if (problemTitle.includes('Water Container')) {
-      const hasSignature = code.includes('maxArea');
-      if (!hasSignature) {
-        return { success: false, error: "❌ [ERROR] Linker Error: Could not find matching C++ function signature:\n'int maxArea(vector<int>& height)'" };
-      }
-      const hasTwoPointers = normalized.includes('min') && normalized.includes('max') && (normalized.includes('left') || normalized.includes('right') || normalized.includes('i') && normalized.includes('j'));
-      if (!hasTwoPointers) {
-        return {
-          success: false,
-          error: "❌ [ERROR] Test Case 1/10 Failed:\nInput: height = [1,8,6,2,5,4,8,3,7]\nExpected: 49\nActual: 0\n\nReason: Two-pointer boundary heights calculator bounds check missing."
-        };
-      }
-    }
-    else if (problemTitle.includes('N-Queens')) {
-      const hasSignature = code.includes('solveNQueens');
-      if (!hasSignature) {
-        return { success: false, error: "❌ [ERROR] Linker Error: Could not find matching C++ function signature:\n'vector<vector<string>> solveNQueens(int n)'" };
-      }
-      const hasBacktrack = normalized.includes('backtrack') || normalized.includes('solve') || normalized.includes('isSafe');
-      if (!hasBacktrack) {
-        return {
-          success: false,
-          error: "❌ [ERROR] Test Case 1/10 Failed:\nInput: n = 4\nExpected: [[\".Q..\",\"...Q\",\"Q...\",\"..Q.\"],[\"..Q.\",\"Q...\",\"...Q\",\".Q..\"]]\nActual: []\n\nReason: Backtracking grid coordinate validation search bounds not explored."
-        };
-      }
-    }
-    else {
-      const hasModifications = normalized.includes('for') || normalized.includes('while') || normalized.includes('if') || normalized.includes('return') && normalized.split('return').length > 2;
-      if (!hasModifications) {
-        return {
-          success: false,
-          error: "❌ [ERROR] Emulated compilation failed: Solution logic is empty or structurally incomplete."
-        };
-      }
-    }
-
-    return { success: true };
-  };
-
   const runDiagnostics = async (code, language = 'cpp') => {
     if (!currentMatch) return;
 
@@ -472,95 +314,53 @@ export const GameProvider = ({ children }) => {
         ...prev,
         logs: [
           ...prev.logs,
-          `[GAME] Submitting code to compilation engine...`
+          `[GAME] Submitting code to secure backend execution engine...`
         ]
       };
     });
 
     try {
-
-      const res = await fetch('https://extra.judge0.com/submissions?base64_encoded=false&wait=true', {
+      const res = await fetch(`${API_URL}/match/execute`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          source_code: code + '\n\nint main() { return 0; }', 
-          language_id: 54,
-          stdin: ''
-        })
-      });
-      const data = await res.json();
-      
-      const compileLogs = [];
-      let passed = 0;
-
-      if (res.ok && data.status && (data.status.id === 3 || data.status.description === 'Accepted')) {
-        passed = 10;
-        compileLogs.push('✔ [SUCCESS] Compilation completed successfully.');
-        compileLogs.push('✔ [SUCCESS] Evaluated 10 test case vectors in Judge0 compilation pipeline.');
-        compileLogs.push('[GAME] 10/10 test cases passed!');
-      } else {
-        passed = 0;
-        compileLogs.push('❌ [ERROR] C++ compilation failed:');
-        if (data.compile_output) {
-          data.compile_output.split('\n').forEach((line) => {
-            if (line.trim()) compileLogs.push(line);
-          });
-        } else if (data.stderr) {
-          data.stderr.split('\n').forEach((line) => {
-            if (line.trim()) compileLogs.push(line);
-          });
-        } else {
-          compileLogs.push(data.status?.description || 'Syntax error present.');
-        }
-        compileLogs.push('[GAME] 0/10 test cases passed.');
-      }
-
-      setCurrentMatch((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          myProgress: passed,
-          logs: [...prev.logs, ...compileLogs]
-        };
-      });
-
-      await fetch(`${API_URL}/match/progress`, {
-        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           roomCode: currentMatch.roomId,
-          progress: passed
+          codeSubmitted: code
         })
       });
 
-    } catch (err) {
-      console.warn('External compilation server offline, activating local cybernetic sandbox fallback:', err);
-      
+      const data = await res.json();
       const compileLogs = [];
       let passed = 0;
 
-      compileLogs.push(`⚠️ [SYSTEM] External compilation server offline (extra.judge0.com).`);
-      compileLogs.push(`🔄 [SYSTEM] Activating Local Cybernetic Sandbox Emulator...`);
-
-      const starterCode = currentMatch.problem?.starterCode || '';
-
-      const validation = validateCode(currentMatch.problem?.title || '', code, starterCode);
-
-      if (!validation.success) {
-        passed = 0;
-        compileLogs.push(validation.error);
-        compileLogs.push(`[GAME] 0/10 test cases passed.`);
+      if (res.ok && data.judgeData) {
+        if (data.judgeData.status && (data.judgeData.status.id === 3 || data.judgeData.status.description === 'Accepted')) {
+          passed = data.progress; 
+          compileLogs.push('✔ [SUCCESS] Code execution completed securely on Node.js backend.');
+          compileLogs.push(`✔ [SUCCESS] Evaluated ${data.passed} hidden test vectors in native C++.`);
+          compileLogs.push(`[GAME] Score: ${passed}/10 test cases passed!`);
+        } else {
+          passed = 0;
+          compileLogs.push('❌ [ERROR] C++ execution failed:');
+          const jd = data.judgeData;
+          if (jd.compile_output) {
+            jd.compile_output.split('\\n').forEach((line) => {
+              if (line.trim()) compileLogs.push(line);
+            });
+          } else if (jd.stderr) {
+            jd.stderr.split('\\n').forEach((line) => {
+              if (line.trim()) compileLogs.push(line);
+            });
+          } else {
+            compileLogs.push(jd.status?.description || 'Syntax error or runtime failure present.');
+          }
+          compileLogs.push('[GAME] Score: 0/10 test cases passed.');
+        }
       } else {
-        passed = 10;
-        compileLogs.push(`✔ [SUCCESS] Emulated compilation completed successfully.`);
-        compileLogs.push(`✔ [SUCCESS] Checked syntax trees, keywords, and brace pairings.`);
-        compileLogs.push(`✔ [SUCCESS] Evaluated 10/10 test case vectors against expected outputs.`);
-        compileLogs.push(`[GAME] 10/10 test cases passed!`);
+        compileLogs.push(`❌ [ERROR] Backend execution rejected: ${data.error || 'Unknown Error'}`);
       }
 
       setCurrentMatch((prev) => {
@@ -572,21 +372,15 @@ export const GameProvider = ({ children }) => {
         };
       });
 
-      try {
-        await fetch(`${API_URL}/match/progress`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            roomCode: currentMatch.roomId,
-            progress: passed
-          })
-        });
-      } catch (dbErr) {
-        console.error('Failed to sync progress with MERN backend:', dbErr);
-      }
+    } catch (err) {
+      console.error('Execution error:', err);
+      setCurrentMatch((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          logs: [...prev.logs, `❌ [ERROR] Network error contacting backend compilation engine.`]
+        };
+      });
     }
   };
 

@@ -6,7 +6,8 @@ import {
   getMatchStatus,
   updateProgress,
   submitMatch,
-  forfeitMatch
+  forfeitMatch,
+  executeCode
 } from '../controllers/matchController.js';
 
 const router = express.Router();
@@ -17,5 +18,6 @@ router.get('/status/:roomCode', authenticateJWT, getMatchStatus);
 router.patch('/progress', authenticateJWT, updateProgress);
 router.post('/submit', authenticateJWT, submitMatch);
 router.post('/forfeit', authenticateJWT, forfeitMatch);
+router.post('/execute', authenticateJWT, executeCode);
 
 export default router;

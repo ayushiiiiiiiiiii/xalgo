@@ -38,7 +38,11 @@ const ProblemSchema = new Schema(
           default: false
         }
       }
-    ]
+    ],
+    testHarness: {
+      type: String,
+      required: false
+    }
   },
   {
     timestamps: true
